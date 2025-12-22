@@ -35,8 +35,8 @@ export default function Login() {
       toast({
         variant: "destructive",
         title: "Login Gagal",
-        description: error.message === "Invalid login credentials" 
-          ? "Email atau password salah" 
+        description: error.message === "Invalid login credentials"
+          ? "Email atau password salah"
           : error.message,
       });
       setIsLoading(false);
@@ -45,7 +45,7 @@ export default function Login() {
 
     toast({
       title: "Login Berhasil!",
-      description: "Selamat datang kembali di FotoYu",
+      description: "Selamat datang kembali di FotoTa",
     });
 
     navigate("/dashboard");
@@ -70,7 +70,7 @@ export default function Login() {
             <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-soft">
               <Camera className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl text-foreground">FotoYu</span>
+            <span className="font-bold text-xl text-foreground">FotoTa</span>
           </Link>
 
           {/* Header */}
@@ -176,7 +176,7 @@ export default function Login() {
             Temukan Foto Dokumentasi Anda
           </h2>
           <p className="text-primary-foreground/80">
-            RoboYu bekerja 24/7 untuk mencocokkan wajah Anda dengan jutaan foto dari fotografer profesional di seluruh Indonesia.
+            RoboTa bekerja 24/7 untuk mencocokkan wajah Anda dengan jutaan foto dari Kegiatan Internal Semen Tonasa
           </p>
         </div>
       </div>

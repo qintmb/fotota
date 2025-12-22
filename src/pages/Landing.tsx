@@ -9,7 +9,7 @@ export default function Landing() {
     {
       icon: Camera,
       title: "Face Recognition AI",
-      description: "RoboYu menggunakan teknologi AI canggih untuk mencocokkan wajah Anda dengan jutaan foto dokumentasi.",
+      description: "RoboTa menggunakan teknologi AI canggih untuk mencocokkan wajah Anda dengan jutaan foto dokumentasi.",
     },
     {
       icon: Shield,
@@ -19,12 +19,12 @@ export default function Landing() {
     {
       icon: Sparkles,
       title: "Temukan Foto Anda",
-      description: "Foto dokumentasi Anda di event, wisata, atau tempat umum kini mudah ditemukan.",
+      description: "Foto dokumentasi Anda di event perusahaan , wisata, atau tempat umum kini mudah ditemukan.",
     },
     {
       icon: Users,
-      title: "Marketplace Kreator",
-      description: "Fotografer profesional mengunggah karya mereka. Anda menemukan momen berharga.",
+      title: "Database Dokumentasi",
+      description: "Seluruh kegiatan perusahaan tersentralisasi dalam satu wadah.",
     },
   ];
 
@@ -43,7 +43,7 @@ export default function Landing() {
             <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-soft">
               <Camera className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl text-foreground">FotoYu</span>
+            <span className="font-bold text-xl text-foreground">FotoTa</span>
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => navigate("/login")}>
@@ -63,19 +63,15 @@ export default function Landing() {
               Powered by AI Face Recognition
             </div>
             <h1 className="text-4xl lg:text-6xl font-bold text-foreground leading-tight mb-6 animate-slide-up">
-              Temukan Foto <span className="text-gradient">Dokumentasi Anda</span> dengan Selfie
+              Temukan Foto Anda di <span className="text-gradient">FotoTa (Foto Tonasa)</span>
             </h1>
             <p className="text-lg lg:text-xl text-muted-foreground mb-10 max-w-2xl animate-slide-up" style={{ animationDelay: "0.1s" }}>
-              FotoYu menghubungkan Anda dengan fotografer profesional. Upload selfie, dan RoboYu akan menemukan semua foto Anda dari database jutaan dokumentasi.
+              FotoTa memudahkan Anda mendapatkan foto Dokumentasi di Kegiatan Perusahaan. Upload selfie, dan RoboTa akan menemukan semua foto Anda dari database jutaan dokumentasi.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 animate-slide-up" style={{ animationDelay: "0.2s" }}>
               <Button variant="hero" size="xl" onClick={() => navigate("/register")}>
                 Mulai Sekarang
                 <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-              <Button variant="hero-outline" size="xl">
-                <Play className="h-5 w-5 mr-2" />
-                Lihat Cara Kerja
               </Button>
             </div>
           </div>
@@ -101,7 +97,7 @@ export default function Landing() {
         <div className="container mx-auto px-6 lg:px-12">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Bagaimana FotoYu Bekerja
+              Bagaimana FotoTa Bekerja
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Teknologi AI kami membuat pencarian foto dokumentasi menjadi mudah dan aman
@@ -143,12 +139,12 @@ export default function Landing() {
                   {
                     step: "01",
                     title: "Daftar & Verifikasi Wajah",
-                    description: "Buat akun dan ambil selfie untuk verifikasi. RoboYu akan menyimpan biometrik wajah Anda dengan aman.",
+                    description: "Buat akun dan ambil selfie untuk verifikasi. RoboTa akan menyimpan biometrik wajah Anda dengan aman.",
                   },
                   {
                     step: "02",
-                    title: "RoboYu Mencari",
-                    description: "AI kami bekerja 24/7 mencocokkan wajah Anda dengan jutaan foto dari fotografer profesional.",
+                    title: "RoboTa Mencari",
+                    description: "AI kami bekerja 24/7 mencocokkan wajah Anda dengan jutaan foto dari seluruh database event perusahaan.",
                   },
                   {
                     step: "03",
@@ -188,7 +184,7 @@ export default function Landing() {
             Siap Menemukan Foto Dokumentasi Anda?
           </h2>
           <p className="text-primary-foreground/80 max-w-2xl mx-auto mb-10">
-            Bergabung dengan ribuan pengguna yang sudah menemukan momen berharga mereka melalui FotoYu
+            Bergabung dengan aplikasi internal kita untuk menemukan momen berharga melalui Fotota
           </p>
           <Button
             size="xl"
@@ -209,10 +205,10 @@ export default function Landing() {
               <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
                 <Camera className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-bold text-foreground">FotoYu</span>
+              <span className="font-bold text-foreground">Fotota</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 FotoYu. Marketplace Dokumentasi Personal.
+              © 2024 Fotota. Database Dokumentasi Personal.
             </p>
           </div>
         </div>

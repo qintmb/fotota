@@ -67,7 +67,7 @@ export function PhotoCard({ photo, onConfirm, onReject, onView }: PhotoCardProps
         {photo.hasWatermark && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <span className="text-primary-foreground/30 text-4xl font-bold rotate-[-30deg] select-none">
-              FOTOYU
+              FOTOTA
             </span>
           </div>
         )}

@@ -10,7 +10,7 @@ interface SidebarProps {
 
 const navItems = [
   { icon: Home, label: "Beranda", path: "/dashboard" },
-  { icon: Camera, label: "FotoYu", path: "/fotoyu" },
+  { icon: Camera, label: "Fotota", path: "/fotota" },
   { icon: User, label: "Akun Saya", path: "/account" },
   { icon: TreePine, label: "FotoTree", path: "/fototree" },
   { icon: Users, label: "Temukan Teman", path: "/friends" },
@@ -35,7 +35,7 @@ export function Sidebar({ onLogout }: SidebarProps) {
 
       {/* Mobile Overlay */}
       {isMobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
@@ -56,7 +56,7 @@ export function Sidebar({ onLogout }: SidebarProps) {
               <Camera className="h-5 w-5 text-primary-foreground" />
             </div>
             {!isCollapsed && (
-              <span className="font-bold text-xl text-foreground">FotoYu</span>
+              <span className="font-bold text-xl text-foreground">FotoTa</span>
             )}
           </div>
         </div>

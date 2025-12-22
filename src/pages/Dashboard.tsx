@@ -119,7 +119,7 @@ export default function Dashboard() {
     setPhotos((prev) => prev.filter((photo) => photo.id !== id));
     toast({
       title: "Foto Ditolak",
-      description: "RoboYu akan belajar dari feedback ini",
+      description: "RoboTa akan belajar dari feedback ini",
     });
   };
 
@@ -155,7 +155,7 @@ export default function Dashboard() {
             Selamat Datang, {userName}! 👋
           </h1>
           <p className="text-muted-foreground">
-            RoboYu menemukan {pendingCount} foto baru yang mungkin Anda
+            RoboTa menemukan {pendingCount} foto baru yang mungkin Anda
           </p>
         </div>
         <div className="flex items-center gap-3">

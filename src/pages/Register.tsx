@@ -62,7 +62,7 @@ export default function Register() {
     }
 
     setIsLoading(true);
-    
+
     const { error } = await signUp(formData.email, formData.password, formData.name);
 
     if (error) {
@@ -81,7 +81,7 @@ export default function Register() {
 
     toast({
       title: "Registrasi Berhasil!",
-      description: "Selamat datang di FotoYu!",
+      description: "Selamat datang di Fotota!",
     });
 
     navigate("/dashboard");
@@ -106,7 +106,7 @@ export default function Register() {
             <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-soft">
               <Camera className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl text-foreground">FotoYu</span>
+            <span className="font-bold text-xl text-foreground">Fotota</span>
           </Link>
 
           {/* Step Indicator */}

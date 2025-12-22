@@ -55,7 +55,7 @@ const mockPendingPhotos: Photo[] = [
   },
 ];
 
-export default function FotoYu() {
+export default function Fotota() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [photos, setPhotos] = useState<Photo[]>(mockPendingPhotos);
@@ -103,7 +103,7 @@ export default function FotoYu() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-          FotoYu - Pencarian Foto
+          Fotota - Pencarian Foto
         </h1>
         <p className="text-muted-foreground">
           RoboYu mencari foto dokumentasi yang cocok dengan wajah Anda

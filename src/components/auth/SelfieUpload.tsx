@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, RotateCcw, Check, AlertCircle } from "lucide-react";
+import { Camera, Upload, RotateCcw, Check, AlertCircle, Shield, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,9 @@ export function SelfieUpload({ onSelfieCapture, existingSelfie }: SelfieUploadPr
   const [isDragging, setIsDragging] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
+  const [isRequestingPermission, setIsRequestingPermission] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -37,17 +40,38 @@ export function SelfieUpload({ onSelfieCapture, existingSelfie }: SelfieUploadPr
   };
 
   const startCamera = async () => {
+    setIsRequestingPermission(true);
+    setCameraError(null);
+
     try {
+      // First, check if we can access camera permissions
+      if ('permissions' in navigator) {
+        const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        setCameraPermission(permissionStatus.state);
+
+        if (permissionStatus.state === 'denied') {
+          throw new Error('Camera permission denied. Please allow camera access and refresh the page.');
+        }
+      }
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: 640, height: 480 },
       });
+
       setStream(mediaStream);
       setIsCapturing(true);
+      setCameraPermission('granted');
+
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error accessing camera:", err);
+      const errorMessage = err instanceof Error ? err.message : 'Gagal mengakses kamera';
+      setCameraError(errorMessage);
+      setCameraPermission('denied');
+    } finally {
+      setIsRequestingPermission(false);
     }
   };
 
@@ -88,6 +112,18 @@ export function SelfieUpload({ onSelfieCapture, existingSelfie }: SelfieUploadPr
   const resetSelfie = () => {
     setPreview(null);
     stopCamera();
+    setCameraPermission('prompt');
+    setCameraError(null);
+  };
+
+  const requestCameraPermission = async () => {
+    setCameraError(null);
+    await startCamera();
+  };
+
+  const openBrowserSettings = () => {
+    // This will open the browser's site settings where user can enable camera
+    window.open('chrome://settings/content/camera', '_blank');
   };
 
   return (
@@ -153,6 +189,12 @@ export function SelfieUpload({ onSelfieCapture, existingSelfie }: SelfieUploadPr
             <p className="text-sm text-muted-foreground mb-4 max-w-xs">
               Selfie akan digunakan RoboYu untuk mencocokkan wajah Anda dengan database foto
             </p>
+            {cameraPermission === 'denied' && (
+              <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-full mb-3">
+                <Shield className="h-3 w-3" />
+                Kamera tidak diizinkan
+              </div>
+            )}
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Upload className="h-3 w-3" />
               Drag & drop atau klik untuk upload
@@ -185,9 +227,14 @@ export function SelfieUpload({ onSelfieCapture, existingSelfie }: SelfieUploadPr
                 e.stopPropagation();
                 startCamera();
               }}
+              disabled={isRequestingPermission}
             >
-              <Camera className="h-4 w-4 mr-2" />
-              Ambil Selfie
+              {isRequestingPermission ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4 mr-2" />
+              )}
+              {isRequestingPermission ? 'Mengaktifkan Kamera...' : 'Ambil Selfie'}
             </Button>
             <Button
               type="button"
@@ -248,6 +295,44 @@ export function SelfieUpload({ onSelfieCapture, existingSelfie }: SelfieUploadPr
           </p>
         </div>
       </div>
+
+      {/* Camera Permission Error */}
+      {cameraError && (
+        <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5">
+          <div className="flex items-start gap-3">
+            <Shield className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-destructive mb-2">Izin Kamera Diperlukan</p>
+              <p className="text-sm text-muted-foreground mb-3">
+                {cameraError}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={requestCameraPermission}
+                  disabled={isRequestingPermission}
+                >
+                  {isRequestingPermission ? (
+                    <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
+                  ) : (
+                    <Camera className="h-3 w-3 mr-2" />
+                  )}
+                  {isRequestingPermission ? 'Meminta Izin...' : 'Coba Lagi'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={openBrowserSettings}
+                >
+                  <Shield className="h-3 w-3 mr-2" />
+                  Pengaturan Browser
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
