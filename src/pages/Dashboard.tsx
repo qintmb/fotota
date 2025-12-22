@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PhotoGrid } from "@/components/photo/PhotoGrid";
@@ -6,6 +6,7 @@ import { Photo } from "@/components/photo/PhotoCard";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Bell, Search, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 // Mock data for demo
 const mockPhotos: Photo[] = [
@@ -80,10 +81,19 @@ const mockPhotos: Photo[] = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading, signOut } = useAuth();
   const [photos, setPhotos] = useState<Photo[]>(mockPhotos);
   const [filter, setFilter] = useState<"all" | "pending" | "confirmed">("all");
 
-  const handleLogout = () => {
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user && !loading) {
+      navigate("/login");
+    }
+  }, [user, loading, navigate]);
+
+  const handleLogout = async () => {
+    await signOut();
     toast({
       title: "Logout Berhasil",
       description: "Sampai jumpa lagi!",
@@ -122,13 +132,27 @@ export default function Dashboard() {
   const pendingCount = photos.filter((p) => p.isPending).length;
   const confirmedCount = photos.filter((p) => p.isConfirmed).length;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+
   return (
     <DashboardLayout onLogout={handleLogout}>
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-            Selamat Datang, User! 👋
+            Selamat Datang, {userName}! 👋
           </h1>
           <p className="text-muted-foreground">
             RoboYu menemukan {pendingCount} foto baru yang mungkin Anda
