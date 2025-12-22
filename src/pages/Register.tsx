@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Camera, Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelfieUpload } from "@/components/auth/SelfieUpload";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 type Step = "info" | "selfie";
 
 export default function Register() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp, user, loading } = useAuth();
   const [step, setStep] = useState<Step>("info");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -22,12 +24,27 @@ export default function Register() {
     password: "",
   });
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !loading) {
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
+
   const handleNextStep = () => {
     if (!formData.name || !formData.email || !formData.password) {
       toast({
         variant: "destructive",
         title: "Error",
         description: "Mohon lengkapi semua field",
+      });
+      return;
+    }
+    if (formData.password.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Password minimal 6 karakter",
       });
       return;
     }
@@ -45,16 +62,39 @@ export default function Register() {
     }
 
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    
+    const { error } = await signUp(formData.email, formData.password, formData.name);
+
+    if (error) {
+      let message = error.message;
+      if (error.message.includes("already registered")) {
+        message = "Email sudah terdaftar. Silakan login.";
+      }
+      toast({
+        variant: "destructive",
+        title: "Registrasi Gagal",
+        description: message,
+      });
+      setIsLoading(false);
+      return;
+    }
 
     toast({
       title: "Registrasi Berhasil!",
-      description: "RoboYu sedang menyiapkan akun Anda...",
+      description: "Selamat datang di FotoYu!",
     });
 
     navigate("/dashboard");
     setIsLoading(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -148,14 +188,14 @@ export default function Register() {
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Minimal 8 karakter"
+                      placeholder="Minimal 6 karakter"
                       className="pl-10 pr-10"
                       value={formData.password}
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
                       required
-                      minLength={8}
+                      minLength={6}
                     />
                     <button
                       type="button"
