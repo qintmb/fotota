@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      employee_whitelist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+          name: string
+          personnel_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_active?: boolean
+          name: string
+          personnel_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          personnel_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -22,6 +52,7 @@ export type Database = {
           id: string
           location: string | null
           phone: string | null
+          profile_photo_url: string | null
           selfie_url: string | null
           updated_at: string
           user_id: string
@@ -33,6 +64,7 @@ export type Database = {
           id?: string
           location?: string | null
           phone?: string | null
+          profile_photo_url?: string | null
           selfie_url?: string | null
           updated_at?: string
           user_id: string
@@ -44,6 +76,7 @@ export type Database = {
           id?: string
           location?: string | null
           phone?: string | null
+          profile_photo_url?: string | null
           selfie_url?: string | null
           updated_at?: string
           user_id?: string
@@ -67,6 +100,54 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          personnel_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          personnel_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          personnel_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_selfies: {
+        Row: {
+          created_at: string
+          file_path: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          id?: string
           user_id?: string
         }
         Relationships: []

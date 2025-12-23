@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, MapPin, Calendar, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock pending photos from RoboYu
+// Mock pending photos from RoboTa
 const mockPendingPhotos: Photo[] = [
   {
     id: "p1",
@@ -84,7 +84,7 @@ export default function Fotota() {
     setPhotos((prev) => prev.filter((photo) => photo.id !== id));
     toast({
       title: "Foto Ditolak",
-      description: "RoboYu akan belajar dari feedback Anda",
+      description: "RoboTa akan belajar dari feedback Anda",
     });
   };
 
@@ -94,7 +94,7 @@ export default function Fotota() {
     setIsSearching(false);
     toast({
       title: "Pencarian Selesai",
-      description: "RoboYu menemukan 4 foto baru yang mungkin Anda",
+      description: "RoboTa menemukan 4 foto baru yang mungkin Anda",
     });
   };
 
@@ -106,7 +106,7 @@ export default function Fotota() {
           Fotota - Pencarian Foto
         </h1>
         <p className="text-muted-foreground">
-          RoboYu mencari foto dokumentasi yang cocok dengan wajah Anda
+          RoboTa mencari foto dokumentasi yang cocok dengan wajah Anda
         </p>
       </div>
 
@@ -157,7 +157,7 @@ export default function Fotota() {
           </div>
         </div>
 
-        {/* RoboYu Status */}
+        {/* RoboTa Status */}
         <div className="mt-4 p-4 rounded-xl bg-muted/50 flex items-center gap-4">
           <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center shadow-soft animate-pulse-soft">
             <svg className="h-6 w-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,7 +165,7 @@ export default function Fotota() {
             </svg>
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-foreground">RoboYu Aktif</p>
+            <p className="font-semibold text-foreground">RoboTa Aktif</p>
             <p className="text-sm text-muted-foreground">
               Sedang memindai database foto untuk mencocokkan wajah Anda...
             </p>
@@ -183,7 +183,7 @@ export default function Fotota() {
           Foto yang Ditemukan
         </h2>
         <p className="text-muted-foreground text-sm">
-          Konfirmasi foto yang benar-benar Anda untuk melatih RoboYu menjadi lebih akurat
+          Konfirmasi foto yang benar-benar Anda untuk melatih RoboTa menjadi lebih akurat
         </p>
       </div>
 

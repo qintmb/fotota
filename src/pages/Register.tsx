@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { SelfieUpload } from "@/components/auth/SelfieUpload";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 type Step = "info" | "selfie";
 
@@ -31,7 +32,7 @@ export default function Register() {
     }
   }, [user, loading, navigate]);
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (!formData.name || !formData.email || !formData.password) {
       toast({
         variant: "destructive",
@@ -48,7 +49,35 @@ export default function Register() {
       });
       return;
     }
-    setStep("selfie");
+
+    // Validate email whitelist before proceeding
+    try {
+      const { data: employee, error: whitelistError } = await supabase
+        .from('employee_whitelist')
+        .select('personnel_id, name')
+        .ilike('email', formData.email)
+        .eq('is_active', true)
+        .single();
+
+      if (whitelistError || !employee) {
+        toast({
+          variant: "destructive",
+          title: "Email Tidak Valid",
+          description: "Email tidak terdaftar, gunakan email internal perusahaan",
+        });
+        return;
+      }
+
+      // Email is valid, proceed to selfie step
+      setStep("selfie");
+    } catch (error) {
+      console.error('Whitelist validation error:', error);
+      toast({
+        variant: "destructive",
+        title: "Validasi Gagal",
+        description: "Terjadi kesalahan saat memvalidasi email. Silakan coba lagi.",
+      });
+    }
   };
 
   const handleSubmit = async () => {
@@ -63,29 +92,107 @@ export default function Register() {
 
     setIsLoading(true);
 
-    const { error } = await signUp(formData.email, formData.password, formData.name);
+    try {
+      // Email whitelist already validated in handleNextStep, proceed with registration
 
-    if (error) {
-      let message = error.message;
-      if (error.message.includes("already registered")) {
-        message = "Email sudah terdaftar. Silakan login.";
+      // 1. signup auth - include full_name in metadata
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.name,
+          },
+        },
+      });
+
+      if (signUpError) {
+        let message = signUpError.message;
+        if (signUpError.message.includes("already registered")) {
+          message = "Email sudah terdaftar. Silakan login.";
+        }
+        toast({
+          variant: "destructive",
+          title: "Registrasi Gagal",
+          description: message,
+        });
+        setIsLoading(false);
+        return;
       }
+
+      // 2. Get employee data for profile creation
+      const { data: employee } = await supabase
+        .from('employee_whitelist')
+        .select('personnel_id, name')
+        .ilike('email', formData.email)
+        .eq('is_active', true)
+        .single();
+
+      // 3. simpan profile dengan kolom yang benar
+      // profiles table memiliki: user_id, full_name, email, phone, location, selfie_url, created_at, updated_at
+      const { error: profileError } = await supabase.from('profiles').insert({
+        user_id: authData.user.id,
+        full_name: formData.name,
+        email: formData.email,
+        phone: null,
+        location: null,
+        selfie_url: null,
+        profile_photo_url: null,
+      });
+
+      if (profileError) {
+        console.error('Error creating user profile:', profileError);
+        // Note: User was created in auth but profile creation failed
+        // In a real app, you might want to handle this differently
+      }
+
+      // 4. upload selfie to storage with name selfie-registrasi.{ext}
+      if (selfie) {
+        const fileExt = selfie.file.name.split('.').pop() || 'jpg';
+        const filePath = `${authData.user.id}/selfie-registrasi.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('user-selfies')
+          .upload(filePath, selfie.file, { upsert: true });
+
+        if (uploadError) {
+          console.error('Error uploading selfie:', uploadError);
+          // Continue with registration even if selfie upload fails
+        } else {
+          // 5. simpan info selfie ke database
+          // Simpan ke user_selfies table (storage bucket name uses dash, table uses underscore)
+          const { error: selfieError } = await supabase.from('user_selfies').insert({
+            user_id: authData.user.id,
+            file_path: filePath
+          });
+
+          if (selfieError) {
+            console.error('Error saving selfie info:', selfieError);
+          }
+
+          // Also update profiles table with selfie_url for AI matching
+          await supabase.from('profiles').update({
+            selfie_url: filePath
+          }).eq('user_id', authData.user.id);
+        }
+      }
+
+      toast({
+        title: "Registrasi Berhasil!",
+        description: "Selamat datang di Fotota!",
+      });
+
+      navigate("/dashboard");
+    } catch (error) {
+      console.error('Registration error:', error);
       toast({
         variant: "destructive",
         title: "Registrasi Gagal",
-        description: message,
+        description: "Terjadi kesalahan saat registrasi. Silakan coba lagi.",
       });
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    toast({
-      title: "Registrasi Berhasil!",
-      description: "Selamat datang di Fotota!",
-    });
-
-    navigate("/dashboard");
-    setIsLoading(false);
   };
 
   if (loading) {
@@ -227,7 +334,7 @@ export default function Register() {
                   Verifikasi Wajah
                 </h1>
                 <p className="text-muted-foreground">
-                  RoboYu membutuhkan selfie untuk mengenali wajah Anda
+                  RoboTa membutuhkan selfie untuk mengenali wajah Anda
                 </p>
               </div>
 
@@ -293,7 +400,7 @@ export default function Register() {
           <ul className="text-left space-y-4 text-primary-foreground/90">
             <li className="flex items-start gap-3">
               <Check className="h-5 w-5 shrink-0 mt-0.5" />
-              <span>RoboYu menggunakan AI untuk mencocokkan wajah Anda dengan database foto</span>
+              <span>RoboTa menggunakan AI untuk mencocokkan wajah Anda dengan database foto</span>
             </li>
             <li className="flex items-start gap-3">
               <Check className="h-5 w-5 shrink-0 mt-0.5" />
