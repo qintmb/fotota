@@ -26,8 +26,6 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/fotota" element={<Fotota />} />
           <Route path="/account" element={<Account />} />
-          <Route path="/fototree" element={<Dashboard />} />
-          <Route path="/friends" element={<Dashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

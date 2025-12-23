@@ -12,8 +12,6 @@ const navItems = [
   { icon: Home, label: "Beranda", path: "/dashboard" },
   { icon: Camera, label: "Fotota", path: "/fotota" },
   { icon: User, label: "Akun Saya", path: "/account" },
-  { icon: TreePine, label: "FotoTree", path: "/fototree" },
-  { icon: Users, label: "Temukan Teman", path: "/friends" },
 ];
 
 export function Sidebar({ onLogout }: SidebarProps) {
