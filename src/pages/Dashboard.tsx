@@ -92,6 +92,13 @@ export default function Dashboard() {
     }
   }, [user, loading, navigate]);
 
+  // Redirect admin to admin dashboard
+  useEffect(() => {
+    if (user && user.email === "admin@st.id") {
+      navigate("/admin");
+    }
+  }, [user, navigate]);
+
   const handleLogout = async () => {
     await signOut();
     toast({
