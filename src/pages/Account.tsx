@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Camera, Mail, Phone, MapPin, Shield, Edit2, Upload, X } from "lucide-react";
 import { SelfieUpload } from "@/components/auth/SelfieUpload";
@@ -34,6 +35,8 @@ export default function Account() {
     pending: 0,
   });
   const [loading, setLoading] = useState(true);
+
+  const isAdmin = user?.email === "admin@st.id";
 
   const handleLogout = async () => {
     try {
@@ -478,23 +481,25 @@ export default function Account() {
     }
   };
 
+  const Layout = isAdmin ? AdminDashboardLayout : DashboardLayout;
+
   if (loading) {
     return (
-      <DashboardLayout onLogout={handleLogout}>
+      <Layout onLogout={handleLogout}>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      </DashboardLayout>
+      </Layout>
     );
   }
 
   if (!user) {
     return (
-      <DashboardLayout onLogout={handleLogout}>
+      <Layout onLogout={handleLogout}>
         <div className="text-center py-8">
           <p className="text-muted-foreground">Anda harus masuk untuk melihat halaman ini.</p>
         </div>
-      </DashboardLayout>
+      </Layout>
     );
   }
 
@@ -514,7 +519,7 @@ export default function Account() {
   };
 
   return (
-    <DashboardLayout onLogout={handleLogout}>
+    <Layout onLogout={handleLogout}>
       {/* Hidden file input for avatar */}
       <input
         type="file"
@@ -746,6 +751,6 @@ export default function Account() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </Layout>
   );
 }

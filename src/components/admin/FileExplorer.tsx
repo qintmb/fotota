@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Folder, File, Download, Trash2, Eye, Upload, Grid, List } from "./icons";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Search, Folder, File, Download, Trash2, Eye, Upload, Grid, List, FolderPlus } from "./icons";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,6 +26,9 @@ export function FileExplorer() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
+  const [newFolderName, setNewFolderName] = useState("");
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -160,6 +163,19 @@ export function FileExplorer() {
   const uploadFiles = async (filesToUpload: FileList) => {
     if (!filesToUpload || filesToUpload.length === 0) return;
 
+    const allowedExtensions = ['.jpeg','.jpg', '.png', ''];
+    for (const file of Array.from(filesToUpload)) {
+      const ext = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+      if (!allowedExtensions.includes(ext)) {
+        toast({
+          title: "File Tidak Didukung",
+          description: `File ${file.name} harus berupa .jpg , jpeg atau .png`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setUploading(true);
     try {
       const uploadPromises = Array.from(filesToUpload).map(async (file) => {
@@ -197,6 +213,52 @@ export function FileExplorer() {
       });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const createFolder = async () => {
+    if (!newFolderName.trim()) {
+      toast({
+        title: "Nama Folder Kosong",
+        description: "Masukkan nama folder yang valid",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingFolder(true);
+    try {
+      const folderPath = currentPath ? `${currentPath}/${newFolderName}/.keep` : `${newFolderName}/.keep`;
+      const { data, error } = await supabase
+        .storage
+        .from('FOTO')
+        .upload(folderPath, new Blob([''], { type: 'text/plain' }), {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Folder Berhasil Dibuat",
+        description: `Folder "${newFolderName}" berhasil dibuat`,
+      });
+
+      setNewFolderName("");
+      setIsNewFolderDialogOpen(false);
+      // Refresh current directory
+      loadFiles(currentPath);
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      toast({
+        title: "Gagal Membuat Folder",
+        description: "Terjadi kesalahan saat membuat folder",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingFolder(false);
     }
   };
 
@@ -297,12 +359,38 @@ export function FileExplorer() {
             <input
               type="file"
               multiple
-              accept="image/*"
+              accept=".jpeg,.jpg,.png"
               className="hidden"
               onChange={(e) => e.target.files && uploadFiles(e.target.files)}
               disabled={uploading}
             />
           </label>
+          <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <FolderPlus className="h-4 w-4 mr-2" />
+                New Folder
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Buat Folder Baru</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Input
+                  placeholder="Nama folder"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setNewFolderName(""); setIsNewFolderDialogOpen(false); }}>Batal</Button>
+                <Button onClick={createFolder} disabled={isCreatingFolder}>
+                  {isCreatingFolder ? 'Membuat...' : 'Buat'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           {currentPath && (
             <Button variant="outline" size="sm" onClick={navigateUp}>
               ⬆️ Kembali

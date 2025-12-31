@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { AdminDashboardLayout } from "@/components/layout/AdminDashboardLayout";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
   const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin';
 
   return (
-    <DashboardLayout onLogout={handleLogout}>
+    <AdminDashboardLayout onLogout={handleLogout}>
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
         <div>
@@ -78,6 +78,6 @@ export default function AdminDashboard() {
       <div className="bg-card border border-border/50 rounded-2xl shadow-card">
         <FileExplorer />
       </div>
-    </DashboardLayout>
+    </AdminDashboardLayout>
   );
 }

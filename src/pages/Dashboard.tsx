@@ -22,29 +22,41 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
-        const { data: files, error } = await supabase.storage.from('FOTO').list();
+        const { data: rootItems, error } = await supabase.storage.from('FOTO').list();
         if (error) throw error;
 
-        const photoPromises = files
-          .filter(file => file.id) // Only files, not folders
-          .map(async (file) => {
-            const { data: signedUrl, error: urlError } = await supabase.storage
-              .from('FOTO')
-              .createSignedUrl(file.name, 3600); // 1 hour expiry
-            if (urlError) throw urlError;
+        const folders = rootItems.filter(item => !item.name.includes('.')); // Folders have no extension
+        const rootFiles = rootItems.filter(item => item.name.includes('.') && (item.name.toLowerCase().endsWith('.jpg') || item.name.toLowerCase().endsWith('.png')));
 
-            return {
-              id: file.id,
-              url: signedUrl.signedUrl,
-              thumbnailUrl: signedUrl.signedUrl, // Use same for now
-              location: undefined,
-              date: undefined,
-              isConfirmed: false,
-              isPending: true,
-              hasWatermark: true,
-              matchScore: 95,
-            } as Photo;
-          });
+        const allFiles = [...rootFiles];
+
+        // Fetch files from each folder
+        for (const folder of folders) {
+          const { data: folderFiles, error: folderError } = await supabase.storage.from('FOTO').list(folder.name);
+          if (folderError) continue;
+
+          const filesInFolder = folderFiles.filter(file => file.name.includes('.') && (file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.png')));
+          allFiles.push(...filesInFolder.map(file => ({ ...file, name: `${folder.name}/${file.name}` })));
+        }
+
+        const photoPromises = allFiles.map(async (file) => {
+          const { data: signedUrl, error: urlError } = await supabase.storage
+            .from('FOTO')
+            .createSignedUrl(file.name, 3600); // 1 hour expiry
+          if (urlError) throw urlError;
+
+          return {
+            id: file.id,
+            url: signedUrl.signedUrl,
+            thumbnailUrl: signedUrl.signedUrl, // Use same for now
+            location: undefined,
+            date: undefined,
+            isConfirmed: false,
+            isPending: true,
+            hasWatermark: true,
+            matchScore: 95,
+          } as Photo;
+        });
 
         const photosData = await Promise.all(photoPromises);
         setPhotos(photosData);
