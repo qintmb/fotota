@@ -4,86 +4,64 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PhotoGrid } from "@/components/photo/PhotoGrid";
 import { Photo } from "@/components/photo/PhotoCard";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sparkles, Bell, Search, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-
-// Mock data for demo
-const mockPhotos: Photo[] = [
-  {
-    id: "1",
-    url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
-    thumbnailUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400",
-    location: "Bali, Indonesia",
-    date: "20 Des 2024",
-    isConfirmed: false,
-    isPending: true,
-    hasWatermark: true,
-    matchScore: 94,
-  },
-  {
-    id: "2",
-    url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800",
-    thumbnailUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400",
-    location: "Yogyakarta",
-    date: "18 Des 2024",
-    isConfirmed: true,
-    isPending: false,
-    hasWatermark: false,
-    matchScore: 98,
-  },
-  {
-    id: "3",
-    url: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800",
-    thumbnailUrl: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400",
-    location: "Labuan Bajo",
-    date: "15 Des 2024",
-    isConfirmed: false,
-    isPending: true,
-    hasWatermark: true,
-    matchScore: 87,
-  },
-  {
-    id: "4",
-    url: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800",
-    thumbnailUrl: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400",
-    location: "Raja Ampat",
-    date: "12 Des 2024",
-    isConfirmed: true,
-    isPending: false,
-    hasWatermark: false,
-    matchScore: 92,
-  },
-  {
-    id: "5",
-    url: "https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=800",
-    thumbnailUrl: "https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=400",
-    location: "Bromo",
-    date: "10 Des 2024",
-    isConfirmed: false,
-    isPending: true,
-    hasWatermark: true,
-    matchScore: 89,
-  },
-  {
-    id: "6",
-    url: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800",
-    thumbnailUrl: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400",
-    location: "Bandung",
-    date: "8 Des 2024",
-    isConfirmed: true,
-    isPending: false,
-    hasWatermark: false,
-    matchScore: 95,
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading, signOut } = useAuth();
-  const [photos, setPhotos] = useState<Photo[]>(mockPhotos);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "confirmed">("all");
+
+  // Fetch photos from Supabase
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      try {
+        const { data: files, error } = await supabase.storage.from('FOTO').list();
+        if (error) throw error;
+
+        const photoPromises = files
+          .filter(file => file.id) // Only files, not folders
+          .map(async (file) => {
+            const { data: signedUrl, error: urlError } = await supabase.storage
+              .from('FOTO')
+              .createSignedUrl(file.name, 3600); // 1 hour expiry
+            if (urlError) throw urlError;
+
+            return {
+              id: file.id,
+              url: signedUrl.signedUrl,
+              thumbnailUrl: signedUrl.signedUrl, // Use same for now
+              location: undefined,
+              date: undefined,
+              isConfirmed: false,
+              isPending: true,
+              hasWatermark: true,
+              matchScore: 95,
+            } as Photo;
+          });
+
+        const photosData = await Promise.all(photoPromises);
+        setPhotos(photosData);
+      } catch (error) {
+        console.error('Error fetching photos:', error);
+        toast({
+          title: "Error",
+          description: "Gagal memuat foto",
+          variant: "destructive",
+        });
+      }
+    };
+
+    if (user) {
+      fetchPhotos();
+    }
+  }, [user, toast]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -128,6 +106,13 @@ export default function Dashboard() {
       title: "Foto Ditolak",
       description: "RoboTa akan belajar dari feedback ini",
     });
+  };
+
+  const handleView = (id: string) => {
+    const photo = photos.find(p => p.id === id);
+    if (photo) {
+      setSelectedPhoto(photo);
+    }
   };
 
   const filteredPhotos = photos.filter((photo) => {
@@ -253,8 +238,26 @@ export default function Dashboard() {
         photos={filteredPhotos}
         onConfirm={handleConfirm}
         onReject={handleReject}
-        onView={(id) => console.log("View photo:", id)}
+        onView={handleView}
       />
+
+      {/* Photo Preview Dialog */}
+      <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Preview Foto</DialogTitle>
+          </DialogHeader>
+          {selectedPhoto && (
+            <div className="flex justify-center">
+              <img
+                src={selectedPhoto.url}
+                alt="Preview"
+                className="max-w-full max-h-[70vh] object-contain"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
