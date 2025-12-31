@@ -163,13 +163,13 @@ export function FileExplorer() {
   const uploadFiles = async (filesToUpload: FileList) => {
     if (!filesToUpload || filesToUpload.length === 0) return;
 
-    const allowedExtensions = ['.jpeg','.jpg', '.png', ''];
+    const allowedExtensions = ['.jpg', '.png'];
     for (const file of Array.from(filesToUpload)) {
       const ext = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
       if (!allowedExtensions.includes(ext)) {
         toast({
           title: "File Tidak Didukung",
-          description: `File ${file.name} harus berupa .jpg , jpeg atau .png`,
+          description: `File ${file.name} harus berupa .jpg atau .png`,
           variant: "destructive",
         });
         return;
@@ -359,7 +359,7 @@ export function FileExplorer() {
             <input
               type="file"
               multiple
-              accept=".jpeg,.jpg,.png"
+              accept=".jpg,.png"
               className="hidden"
               onChange={(e) => e.target.files && uploadFiles(e.target.files)}
               disabled={uploading}

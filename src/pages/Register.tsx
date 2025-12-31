@@ -175,6 +175,19 @@ const userId = user.id;
         // In a real app, you might want to handle this differently
       }
 
+      // 4. Create user role entry with default 'user' role
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: userId,
+          role: "user",
+        });
+
+      if (roleError) {
+        console.error("Error creating user role:", roleError);
+        // Continue with registration even if role creation fails
+      }
+
       // 4. upload selfie to storage with name selfie-registrasi.{ext}
       if (selfie) {
         const fileExt = selfie.file.name.split(".").pop() || "jpg";

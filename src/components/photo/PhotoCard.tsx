@@ -13,6 +13,7 @@ export interface Photo {
   isPending: boolean;
   hasWatermark: boolean;
   matchScore?: number;
+  path?: string;
 }
 
 interface PhotoCardProps {
@@ -20,9 +21,10 @@ interface PhotoCardProps {
   onConfirm?: (id: string) => void;
   onReject?: (id: string) => void;
   onView?: (id: string) => void;
+  onDownload?: (photo: Photo) => void;
 }
 
-export function PhotoCard({ photo, onConfirm, onReject, onView }: PhotoCardProps) {
+export function PhotoCard({ photo, onConfirm, onReject, onView, onDownload }: PhotoCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -115,6 +117,19 @@ export function PhotoCard({ photo, onConfirm, onReject, onView }: PhotoCardProps
               <Eye className="h-4 w-4 mr-1.5" />
               Lihat
             </Button>
+            {photo.isConfirmed && onDownload && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="bg-card/90 backdrop-blur-sm hover:bg-card text-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownload(photo);
+                }}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>

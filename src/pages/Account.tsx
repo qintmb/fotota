@@ -481,27 +481,15 @@ export default function Account() {
     }
   };
 
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   const Layout = isAdmin ? AdminDashboardLayout : DashboardLayout;
-
-  if (loading) {
-    return (
-      <Layout onLogout={handleLogout}>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Layout onLogout={handleLogout}>
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">Anda harus masuk untuk melihat halaman ini.</p>
-        </div>
-      </Layout>
-    );
-  }
 
   const userData = {
     // Get full_name from profile table first, fallback to auth metadata

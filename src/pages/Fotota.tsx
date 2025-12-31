@@ -1,69 +1,139 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PhotoGrid } from "@/components/photo/PhotoGrid";
 import { Photo } from "@/components/photo/PhotoCard";
 import { Button } from "@/components/ui/button";
-import { Search, SlidersHorizontal, MapPin, Calendar, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, SlidersHorizontal, MapPin, Calendar, Loader2, Download, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock pending photos from RoboTa
-const mockPendingPhotos: Photo[] = [
-  {
-    id: "p1",
-    url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800",
-    thumbnailUrl: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400",
-    location: "Semeru, Jawa Timur",
-    date: "21 Des 2024",
-    isConfirmed: false,
-    isPending: true,
-    hasWatermark: true,
-    matchScore: 96,
-  },
-  {
-    id: "p2",
-    url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800",
-    thumbnailUrl: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400",
-    location: "Rinjani, Lombok",
-    date: "19 Des 2024",
-    isConfirmed: false,
-    isPending: true,
-    hasWatermark: true,
-    matchScore: 91,
-  },
-  {
-    id: "p3",
-    url: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800",
-    thumbnailUrl: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400",
-    location: "Kawah Ijen",
-    date: "17 Des 2024",
-    isConfirmed: false,
-    isPending: true,
-    hasWatermark: true,
-    matchScore: 88,
-  },
-  {
-    id: "p4",
-    url: "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800",
-    thumbnailUrl: "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=400",
-    location: "Dieng Plateau",
-    date: "14 Des 2024",
-    isConfirmed: false,
-    isPending: true,
-    hasWatermark: true,
-    matchScore: 85,
-  },
-];
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Fotota() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [photos, setPhotos] = useState<Photo[]>(mockPendingPhotos);
+  const { user } = useAuth();
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+
+  // Check if user is admin and redirect
+  useEffect(() => {
+    if (user && user.email === "admin@st.id") {
+      toast({
+        title: "Akses Ditolak",
+        description: "Admin tidak memiliki akses ke halaman Fotota",
+        variant: "destructive",
+      });
+      navigate("/admin");
+    }
+  }, [user, navigate, toast]);
+
+  // Fetch confirmed photos for the user
+  useEffect(() => {
+    const fetchConfirmedPhotos = async () => {
+      if (!user) return;
+
+      try {
+        // Get user's confirmed photo actions
+        const { data: actionsData, error: actionsError } = await supabase
+          .from('user_photo_actions')
+          .select('photo_path')
+          .eq('user_id', user.id)
+          .eq('action', 'confirmed');
+
+        if (actionsError) throw actionsError;
+
+        if (actionsData.length === 0) {
+          setPhotos([]);
+          setLoading(false);
+          return;
+        }
+
+        // Get signed URLs for confirmed photos
+        const photoPromises = actionsData.map(async (action) => {
+          try {
+            const { data: signedUrl, error: urlError } = await supabase.storage
+              .from('FOTO')
+              .createSignedUrl(action.photo_path, 3600);
+
+            if (urlError) throw urlError;
+
+            return {
+              id: action.photo_path,
+              url: signedUrl.signedUrl,
+              thumbnailUrl: signedUrl.signedUrl,
+              location: undefined,
+              date: undefined,
+              isConfirmed: true,
+              isPending: false,
+              hasWatermark: false,
+              matchScore: undefined,
+            } as Photo;
+          } catch (error) {
+            console.error(`Error loading photo ${action.photo_path}:`, error);
+            return null;
+          }
+        });
+
+        const photosData = await Promise.all(photoPromises);
+        const validPhotos = photosData.filter(photo => photo !== null) as Photo[];
+        setPhotos(validPhotos);
+      } catch (error) {
+        console.error('Error fetching confirmed photos:', error);
+        toast({
+          title: "Error",
+          description: "Gagal memuat foto",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConfirmedPhotos();
+  }, [user, toast]);
 
   const handleLogout = () => {
     navigate("/");
+  };
+
+  const handleView = (id: string) => {
+    const photo = photos.find(p => p.id === id);
+    if (photo) {
+      setSelectedPhoto(photo);
+    }
+  };
+
+  const handleDownload = async (photo: Photo) => {
+    try {
+      const response = await fetch(photo.url);
+      if (!response.ok) throw new Error('Failed to fetch photo');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `foto-${photo.id}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download Dimulai",
+        description: "Foto sedang diunduh ke perangkat Anda",
+      });
+    } catch (error) {
+      console.error('Error downloading photo:', error);
+      toast({
+        title: "Gagal Download",
+        description: "Terjadi kesalahan saat mengunduh foto",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleConfirm = (id: string) => {
@@ -103,96 +173,104 @@ export default function Fotota() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-          Fotota - Pencarian Foto
+          Koleksi Foto Saya
         </h1>
         <p className="text-muted-foreground">
-          RoboTa mencari foto dokumentasi yang cocok dengan wajah Anda
+          Foto-foto yang telah Anda konfirmasi sebagai milik Anda
         </p>
       </div>
 
-      {/* Search Controls */}
+      {/* Stats */}
       <div className="p-6 rounded-2xl bg-card border border-border/50 shadow-card mb-8">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Cari berdasarkan lokasi atau tanggal..."
-              className="w-full h-12 pl-12 pr-4 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" size="lg">
-              <MapPin className="h-4 w-4 mr-2" />
-              Lokasi
-            </Button>
-            <Button variant="outline" size="lg">
-              <Calendar className="h-4 w-4 mr-2" />
-              Tanggal
-            </Button>
-            <Button variant="outline" size="lg">
-              <SlidersHorizontal className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
-            <Button
-              variant="hero"
-              size="lg"
-              onClick={handleSearch}
-              disabled={isSearching}
-            >
-              {isSearching ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Mencari...
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4 mr-2" />
-                  Cari Foto
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {/* RoboTa Status */}
-        <div className="mt-4 p-4 rounded-xl bg-muted/50 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center shadow-soft animate-pulse-soft">
-            <svg className="h-6 w-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-foreground">RoboTa Aktif</p>
-            <p className="text-sm text-muted-foreground">
-              Sedang memindai database foto untuk mencocokkan wajah Anda...
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-1">Total Foto Koleksi</h3>
+            <p className="text-muted-foreground text-sm">
+              Foto yang telah Anda konfirmasi sebagai milik Anda
             </p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-primary">{photos.filter(p => p.isPending).length}</p>
-            <p className="text-xs text-muted-foreground">Foto ditemukan</p>
+            <p className="text-3xl font-bold text-primary">{photos.length}</p>
+            <p className="text-sm text-muted-foreground">Foto</p>
           </div>
         </div>
       </div>
 
       {/* Results */}
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground mb-2">
-          Foto yang Ditemukan
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          Konfirmasi foto yang benar-benar Anda untuk melatih RoboTa menjadi lebih akurat
-        </p>
-      </div>
+      {photos.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            Koleksi Foto Anda
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Semua foto yang telah Anda konfirmasi tersimpan di sini
+          </p>
+        </div>
+      )}
 
-      <PhotoGrid
-        photos={photos}
-        onConfirm={handleConfirm}
-        onReject={handleReject}
-        onView={(id) => console.log("View photo:", id)}
-      />
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : photos.length === 0 ? (
+        <div className="text-center py-16">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+            <svg className="h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-foreground mb-2">Belum ada foto</h3>
+          <p className="text-muted-foreground mb-6">
+            Anda belum mengonfirmasi foto apapun. Kunjungi Dashboard untuk melihat foto yang mungkin cocok dengan Anda.
+          </p>
+          <Button onClick={() => navigate("/dashboard")}>
+            Kunjungi Dashboard
+          </Button>
+        </div>
+      ) : (
+        <PhotoGrid
+          photos={photos}
+          onConfirm={handleConfirm}
+          onReject={handleReject}
+          onView={handleView}
+        />
+      )}
+
+      {/* Photo Preview Dialog */}
+      <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Preview Foto</DialogTitle>
+          </DialogHeader>
+          {selectedPhoto && (
+            <div className="space-y-4">
+              <div className="flex justify-center">
+                <img
+                  src={selectedPhoto.url}
+                  alt="Preview"
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                />
+              </div>
+              <div className="flex justify-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => handleDownload(selectedPhoto)}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedPhoto(null)}
+                >
+                  Tutup
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
